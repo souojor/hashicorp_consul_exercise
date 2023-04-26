@@ -78,3 +78,43 @@ consulserver01  172.20.0.4:8301  alive   server  1.10.12  2         dc1  <all>
 consulserver02  172.20.0.3:8301  alive   server  1.10.12  2         dc1  <all>
 consulserver03  172.20.0.2:8301  alive   server  1.10.12  2         dc1  <all>
 
+Criamos o consulclient01 e seu volume;
+
+docker exec -it consulclient01 sh
+mkdir /var/lib/consul
+consul agent -bind=172.18.0.2 -data-dir=/var/lib/consul -config-dir=/etc/consul.d
+consul join 172.20.0.2
+
+criamos o service.json
+
+consul reload
+
+# 2023-04-26T15:36:59.215Z [INFO]  agent: Synced service: service=nginx
+
+# dig @localhost -p 8600 nginx.service.consul
+
+; <<>> DiG 9.16.39 <<>> @localhost -p 8600 nginx.service.consul
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 5695
+;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;nginx.service.consul.          IN      A
+
+;; ANSWER SECTION:
+nginx.service.consul.   0       IN      A       172.18.0.2
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.1#8600(127.0.0.1)
+;; WHEN: Wed Apr 26 15:39:39 UTC 2023
+;; MSG SIZE  rcvd: 65
+
+# curl localhost:8500/v1/catalog/services  #smostra os seviços cadastrados
+# consul catalog nodes -service nginx
+Node            ID        Address     DC
+consulclient01  68bc2e31  172.18.0.2  dc1
