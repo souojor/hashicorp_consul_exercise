@@ -114,7 +114,64 @@ nginx.service.consul.   0       IN      A       172.18.0.2
 ;; WHEN: Wed Apr 26 15:39:39 UTC 2023
 ;; MSG SIZE  rcvd: 65
 
-# curl localhost:8500/v1/catalog/services  #smostra os sevi�os cadastrados
+# curl localhost:8500/v1/catalog/services  #smostra os sevi�os cadastrados
 # consul catalog nodes -service nginx
 Node            ID        Address     DC
 consulclient01  68bc2e31  172.18.0.2  dc1
+
+Criamos o consulclient02 e o novo service nginx2
+
+docker exec -it consulclient02 sh
+mkdir /var/lib/consul
+consul agent -bind=172.20.0.6 -data-dir=/var/lib/consul -config-dir=/etc/consul.d -retry-join=172.20.0.3 -retry-join=172.20.0.4
+
+dig @localhost -p 8600 nginx.service.consul
+
+;; ANSWER SECTION:
+nginx.service.consul.   0       IN      A       172.20.0.6
+nginx.service.consul.   0       IN      A       172.20.0.5
+
+Adicionando os checks no services.json
+
+apk add nginx
+
+nginx
+
+apk add vim
+
+mkdir /usr/share/nginx/html -p
+vim /etc/nginx/http.d/default.conf
+
+para evitar o 404 e a falha do check, retiramos o trecho location return 404 e adicionamos:
+root /usr/share/nginx/html;
+
+criar o index.html no diretório acima.
+
+nginx -s reload
+
+curl localhost
+
+O check deve ter voltado a funcionar e o serviço estar disponível no dig @localhost -p 8600 nginx.service.consul
+
+Criamos o server.json para facilitar subir os servers.
+
+Após configurado o server.json, para iniciar:
+consul agent -config-dir=/etc/consul.d
+
+Encriptação:
+consul keygen
+giWM1bQtzNeqjfjbIbbEY+iGsdWVHVPPiUohbPsmFrU=
+adicionamos nos jsons dos servers.
+
+verificar se há criptografia:
+apk -U add bind-tools
+apk -U add tcpdump
+
+tcpdump -i eth0 -an port 8301 -A
+
+User interface do Consul foi declarada no server.json do server01:
+
+http://localhost:8500/ui
+
+
+
